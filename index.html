@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14110f"><title>Fast</title><link rel="icon" href="data:,">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head><body>
+<header><h1>Fast</h1><button id="acctBtn" class="ghost small">Sign in</button></header>
+<main>
+<section id="view-onboard" class="view hidden">
+  <h2 id="onboardTitle">Your profile</h2>
+  <p class="muted">Used to estimate your resting calories (Mifflin-St Jeor).</p>
+  <form id="profileForm" class="card">
+    <label>Height<div class="row"><input name="ft" type="number" min="3" max="8" required placeholder="ft"><span>ft</span><input name="in" type="number" min="0" max="11.9" step="0.1" required placeholder="in"><span>in</span></div></label>
+    <label>Weight (lb)<input name="weight" type="number" step="0.1" min="60" max="800" required></label>
+    <label>Sex<select name="sex" required><option value="male">Male</option><option value="female">Female</option></select></label>
+    <label>Age<input name="age" type="number" min="13" max="110" required></label>
+    <label>Activity level<select name="activity">
+      <option value="1.2">Sedentary (×1.2)</option><option value="1.375">Lightly active (×1.375)</option>
+      <option value="1.55">Moderately active (×1.55)</option><option value="1.725">Very active (×1.725)</option><option value="1.9">Extra active (×1.9)</option></select></label>
+    <label>Goal weight (lb)<input name="goal" type="number" step="0.1" min="60" max="800" required></label>
+    <div class="bmrPreview" id="bmrPreview"></div>
+    <button class="primary" type="submit">Save profile</button>
+  </form>
+</section>
+
+<section id="view-fast" class="view">
+  <div class="stats card"><div><span class="muted">Resting calories burned per day</span><b id="bmrVal">–</b></div><div><span class="muted">With activity</span><b id="tdeeVal">–</b></div></div>
+  <div id="startPanel" class="card">
+    <h2>Start a fast</h2><p class="muted">How many hours?</p>
+    <div class="presets" id="presets"></div>
+    <div class="row"><input id="customHours" type="number" min="1" max="96" step="0.5" placeholder="Custom hours"><button id="startCustom" class="ghost">Start</button></div>
+  </div>
+  <div id="timerPanel" class="hidden">
+    <div class="ring-wrap"><svg viewBox="0 0 200 200" class="ring"><circle cx="100" cy="100" r="88" class="track"/><circle cx="100" cy="100" r="88" class="prog" id="ringProg"/></svg>
+      <div class="ring-text"><div id="remain">--:--:--</div><div class="muted" id="ringSub"></div></div></div>
+    <button id="hungryBtn" class="hungry">🍽️ I'm hungry / thinking about food</button>
+    <button id="endBtn" class="ghost">End fast early</button>
+  </div>
+  <div id="hungryPanel" class="card hidden">
+    <h3>Stay with it — here's what's at stake</h3>
+    <ul class="est" id="estList"></ul>
+    <p class="fine" id="estNote"></p>
+    <div class="tip"><b>Tip:</b> <span id="tipText"></span> <button id="nextTip" class="link">another</button></div>
+    <p class="safety">If you feel dizzy, faint, have chest pain, or are pregnant, diabetic, on medication, or have a history of eating disorders, stop and eat — and check with a doctor before extended fasts. Hunger usually comes in waves of ~15–20 minutes.</p>
+  </div>
+</section>
+
+<section id="view-weight" class="view hidden">
+  <form id="weightForm" class="card row"><input id="weightIn" type="number" step="0.1" min="60" max="800" placeholder="Weight (lb)" required><button class="primary">Log</button></form>
+  <button id="importBtn" class="ghost wide">Import from Apple Health (coming soon)</button>
+  <div class="card"><canvas id="chart" height="200"></canvas><p class="muted" id="goalLine"></p></div>
+  <ul class="list" id="weightList"></ul>
+</section>
+
+<section id="view-history" class="view hidden"><ul class="list" id="historyList"></ul></section>
+
+<section id="view-auth" class="view hidden">
+  <div class="card"><h2>Account</h2><p class="muted" id="authStatus">Signed out — data is stored on this device only.</p>
+  <form id="authForm"><input id="email" type="email" placeholder="you@email.com" required><input id="password" type="password" placeholder="Password (min 6)" minlength="6" required>
+  <div class="row"><button class="primary" data-act="in">Sign in</button><button class="ghost" data-act="up">Create account</button></div></form>
+  <button id="signOut" class="ghost wide hidden">Sign out</button><p class="fine" id="authMsg"></p></div>
+  <button id="editProfile" class="ghost wide">Edit profile</button>
+</section>
+</main>
+<nav><button data-v="fast" class="on">⏱️<span>Fast</span></button><button data-v="weight">⚖️<span>Weight</span></button><button data-v="history">📜<span>History</span></button><button data-v="auth">👤<span>Profile</span></button></nav>
+<div id="toast" class="toast hidden"></div>
+<script src="config.js"></script><script src="weightSource.js"></script><script src="store.js"></script><script src="app.js"></script>
+</body></html>
