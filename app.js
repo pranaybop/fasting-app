@@ -39,20 +39,23 @@ $("#editProfile").onclick=()=>{$("#onboardTitle").textContent="Edit profile";fil
 // Fast
 [12,16,18,20,24,36].forEach(h=>{const b=document.createElement("button");b.textContent=h+"h";b.onclick=()=>start(h);$("#presets").append(b)});
 $("#startCustom").onclick=()=>{const h=+$("#customHours").value;if(h>0&&h<=96)start(h);else toast("Enter 1–96 hours")};
+$("#startOpen").onclick=()=>start(null);
 function start(h){Store.startFast(h);$("#hungryPanel").classList.add("hidden");render();}
-$("#endBtn").onclick=()=>{if(!confirm("End this fast early?"))return;const f=Store.endFast();render();if(f)toast(`Fast logged: ${((f.end-f.start)/36e5).toFixed(1)}h`)};
+$("#endBtn").onclick=()=>{const f0=Store.state.activeFast;if(!f0)return;const open=!f0.hours,done=!open&&Date.now()-f0.start>=f0.hours*3600e3;if(!confirm(open||done?"End this fast?":"End this fast early?"))return;const f=Store.endFast();render();if(f)toast(`Fast logged: ${((f.end-f.start)/36e5).toFixed(1)}h`)};
 const R=2*Math.PI*88; $("#ringProg").style.strokeDasharray=R;
-function tick(){const f=Store.state.activeFast;if(!f)return;const total=f.hours*3600e3,el=Date.now()-f.start,rem=Math.max(0,total-el);
-  const h=Math.floor(rem/36e5),m=Math.floor(rem%36e5/6e4),s=Math.floor(rem%6e4/1e3);
-  $("#remain").textContent=rem?`${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`:"Done! 🎉";
+function clock(ms){const h=Math.floor(ms/36e5),m=Math.floor(ms%36e5/6e4),s=Math.floor(ms%6e4/1e3);return `${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;}
+function tick(){const f=Store.state.activeFast;if(!f)return;const el=Date.now()-f.start;
+  if(!f.hours){$("#remain").textContent=clock(el);$("#ringSub").textContent=`${(el/36e5).toFixed(1)}h elapsed · open-ended`;$("#ringProg").style.strokeDashoffset=0;$("#endBtn").textContent="End fast";return;}
+  const total=f.hours*3600e3,rem=Math.max(0,total-el);
+  $("#remain").textContent=rem?clock(rem):"Done! 🎉";
   $("#ringSub").textContent=rem?`${(el/36e5).toFixed(1)}h of ${f.hours}h`:`${f.hours}h fast complete. Tap End to log it.`;
   $("#ringProg").style.strokeDashoffset=R*(1-Math.min(1,el/total));
   $("#endBtn").textContent=rem?"End fast early":"Finish & log fast";}
 setInterval(tick,1000);
 
 function lbs(hours){return tdee(Store.state.profile)*(hours/24)*BURN_NET/3500;}
-function showHungry(){const f=Store.state.activeFast,p=Store.state.profile;const per=lbs(f.hours);
-  const rows=[[`Finish this ${f.hours}h fast`,per],...[1,3,6].map(mo=>[`Keep it up ${HABIT_PER_WEEK}×/week for ${mo} month${mo>1?"s":""}`,per*HABIT_PER_WEEK*WEEKS[mo]])];
+function showHungry(){const f=Store.state.activeFast,p=Store.state.profile;const elapsed=(Date.now()-f.start)/36e5;
+  const rows=f.hours?[[`Finish this ${f.hours}h fast`,lbs(f.hours)],...[1,3,6].map(mo=>[`Keep it up ${HABIT_PER_WEEK}×/week for ${mo} month${mo>1?"s":""}`,lbs(f.hours)*HABIT_PER_WEEK*WEEKS[mo]])]:[[`So far (${elapsed.toFixed(1)}h)`,lbs(elapsed)],["If you reach 24h",lbs(24)],["If you reach 48h",lbs(48)]];
   $("#estList").innerHTML=rows.map(([l,v])=>`<li><span>${l}</span><b>~${v.toFixed(v<1?2:1)} lb fat</b></li>`).join("");
   const toGoal=p?Math.max(0,p.weight-p.goal):0;
   $("#estNote").textContent=`Conservative estimate: ${fmt(tdee(p))} kcal/day (${bmr(p)?"your resting calories × activity":"default 2200"}) × hours fasted, counting only 70% as a net deficit since people often eat a bit more afterwards, at 3,500 kcal per lb. Water weight isn't counted, so the scale may move faster at first. Real results vary.${toGoal?` You're ${toGoal.toFixed(1)} lb from your goal of ${p.goal} lb.`:""}`;
@@ -89,7 +92,7 @@ function render(){const S=Store.state,p=S.profile;
   $("#startPanel").classList.toggle("hidden",!!S.activeFast);$("#timerPanel").classList.toggle("hidden",!S.activeFast);if(S.activeFast)tick();else $("#hungryPanel").classList.add("hidden");
   $("#weightList").innerHTML=[...S.weights].reverse().map(w=>`<li><span>${new Date(w.at).toLocaleDateString()} <span class="muted">${w.source}</span></span><span><b>${w.lb} lb</b> <button class="x" data-id="${w.id}">✕</button></span></li>`).join("")||'<li class="muted">No entries yet</li>';
   $$("#weightList .x").forEach(b=>b.onclick=()=>{Store.delWeight(b.dataset.id);render();drawChart()});
-  $("#historyList").innerHTML=[...S.fasts].sort((a,b)=>b.start-a.start).map(f=>{const h=(f.end-f.start)/36e5;return `<li><span>${new Date(f.start).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}<br><span class="muted">${h.toFixed(1)}h of ${f.hours}h goal</span></span><b style="color:${f.completed?"var(--ok)":"var(--mu)"}">${f.completed?"✓ Completed":"Ended early"}</b></li>`}).join("")||'<li class="muted">No fasts yet</li>';}
+  $("#historyList").innerHTML=[...S.fasts].sort((a,b)=>b.start-a.start).map(f=>{const h=(f.end-f.start)/36e5;const detail=f.hours?`${h.toFixed(1)}h of ${f.hours}h goal`:`${h.toFixed(1)}h open-ended`;return `<li><span>${new Date(f.start).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}<br><span class="muted">${detail}</span></span><b style="color:${f.completed?"var(--ok)":"var(--mu)"}">${f.completed?"✓ Completed":"Ended early"}</b></li>`}).join("")||'<li class="muted">No fasts yet</li>';}
 
 render();
 if(!Store.state.profile){fillProfile();show("onboard");}else show("fast");

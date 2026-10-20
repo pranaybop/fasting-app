@@ -51,8 +51,8 @@
   window.Store={
     get state(){return S}, get user(){return user}, get cloud(){return !!auth},
     setProfile(p){S.profile=p;save();bg(remote.profile(p));},
-    startFast(hours){S.activeFast={id:uid(),start:Date.now(),hours,end:null,completed:false};save();bg(remote.active(S.activeFast));},
-    endFast(){const f=S.activeFast;if(!f)return null;f.end=Date.now();f.completed=(f.end-f.start)>=f.hours*3600e3;S.fasts.push(f);S.activeFast=null;save();bg(remote.fast(f));bg(remote.active(null));return f;},
+    startFast(hours){S.activeFast={id:uid(),start:Date.now(),hours:hours||null,end:null,completed:false};save();bg(remote.active(S.activeFast));},
+    endFast(){const f=S.activeFast;if(!f)return null;f.end=Date.now();f.completed=f.hours?(f.end-f.start)>=f.hours*3600e3:true;S.fasts.push(f);S.activeFast=null;save();bg(remote.fast(f));bg(remote.active(null));return f;},
     addWeight(lb,source="manual",at=Date.now()){const w={id:uid(),at,lb,source};S.weights.push(w);S.weights.sort((a,b)=>a.at-b.at);
       const latest=S.weights[S.weights.length-1]; if(S.profile){S.profile.weight=latest.lb;bg(remote.profile(S.profile));} save();bg(remote.weight(w));},
     delWeight(id){S.weights=S.weights.filter(w=>w.id!==id);const l=S.weights[S.weights.length-1];if(l&&S.profile){S.profile.weight=l.lb;bg(remote.profile(S.profile));}save();bg(remote.delWeight(id));},
